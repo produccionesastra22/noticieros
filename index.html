@@ -3,21 +3,20 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Título Noticiero</title>
+<title>Barra de Titulares</title>
 
 <!--
   ==========================================================================
   CÓMO USAR EN OBS
   ==========================================================================
-  1. Agrega este archivo como "Fuente de navegador" (Browser Source) en OBS,
-     o súbelo a un hosting (GitHub Pages, etc.) y pega el link ahí.
-  2. Deja el fondo TRANSPARENTE marcado en OBS (ya viene transparente).
+  1. Agregá este archivo como "Fuente de navegador" (Browser Source) en OBS,
+     o subilo a un hosting (GitHub Pages, etc.) y pegá el link ahí.
+  2. Dejá el fondo TRANSPARENTE (ya viene así).
   3. Tamaño recomendado: 1920 x 1080.
-  4. Para controlar el título desde otra pestaña/celular, abre el mismo link
+  4. Para controlarlo desde otra pestaña o el celular, abrí el mismo link
      agregando  ?admin=1  al final. Ejemplo:
        tu-link.html?admin=1
-     Esa pestaña de admin NO hace falta agregarla en OBS, solo la fuente
-     normal (sin ?admin=1) va en OBS.
+     Esa pestaña de admin NO va en OBS, solo la fuente normal (sin ?admin=1).
   ==========================================================================
 -->
 
@@ -29,7 +28,6 @@
 
   :root{
     --panel:#12151b;
-    --panel-2:#181c24;
     --line:rgba(255,255,255,.1);
     --text:#f4f6fa;
     --muted:#8b93a3;
@@ -38,110 +36,102 @@
     --disp:'Barlow Condensed',sans-serif;
   }
   *{box-sizing:border-box;}
-  html,body{
-    margin:0; padding:0; width:100%; height:100%;
-    background:transparent;
-  }
-  body{
-    font-family:var(--sans);
-    color:var(--text);
-    overflow:hidden;
-  }
+  html,body{ margin:0; padding:0; width:100%; height:100%; background:transparent; }
+  body{ font-family:var(--sans); color:var(--text); overflow:hidden; }
 
-  /* ================= LOWER THIRD (lo que se ve en OBS) ================= */
+  /* ================= BARRA DE TITULARES (lo que se ve en OBS) ================= */
   #stage{
-    position:fixed;
-    left:0; right:0; bottom:0;
-    height:100vh;
-    display:flex;
-    align-items:flex-end;
-    justify-content:flex-start;
+    position:fixed; left:0; right:0; bottom:0;
+    display:flex; justify-content:center;
     pointer-events:none;
   }
 
-  #lowerThird{
-    --accent: #c8102e;
-    position:relative;
-    margin:0 0 68px 64px;
+  #headlineBar{
+    --accent:#c8102e;
+    width:100%;
+    max-width:1920px;
     display:flex;
     align-items:stretch;
     opacity:0;
-    transform:translateX(-38px);
-    transition:opacity .38s ease, transform .38s cubic-bezier(.2,.8,.2,1);
+    transform:translateY(24px);
+    transition:opacity .4s ease, transform .4s cubic-bezier(.2,.8,.2,1);
   }
-  #lowerThird.visible{
-    opacity:1;
-    transform:translateX(0);
-  }
+  #headlineBar.visible{ opacity:1; transform:translateY(0); }
 
-  .lt-flag{
-    width:6px;
-    background:var(--accent);
-    flex:0 0 6px;
-    border-radius:2px 0 0 2px;
+  .hb-logo-cell{
+    flex:0 0 128px;
+    display:flex; align-items:center; justify-content:center;
+    background:#0a0c10;
+    border-top:3px solid var(--accent);
   }
+  .hb-logo{
+    width:74px; height:74px;
+    object-fit:contain;
+  }
+  .hb-logo-cell.empty{ display:none; }
 
-  .lt-body{
+  .hb-main{
+    flex:1;
+    min-width:0;
     display:flex;
     flex-direction:column;
-    background:linear-gradient(90deg, rgba(10,12,16,.94), rgba(10,12,16,.82));
+    justify-content:center;
+    background:linear-gradient(90deg, rgba(9,11,15,.96), rgba(9,11,15,.9));
     backdrop-filter:blur(6px);
-    padding:0;
-    box-shadow:0 12px 34px rgba(0,0,0,.4);
-    min-width:340px;
-    max-width:640px;
+    padding:12px 26px;
+    border-top:3px solid var(--accent);
   }
 
-  .lt-kicker{
+  .hb-top-row{
+    display:flex;
+    align-items:center;
+    gap:12px;
+    margin-bottom:6px;
+  }
+
+  .hb-category{
     display:inline-flex;
     align-items:center;
-    gap:8px;
-    width:fit-content;
-    padding:5px 14px;
-    margin:0;
+    padding:4px 12px;
     background:var(--accent);
     color:#fff;
     font-family:var(--disp);
-    font-size:12.5px;
+    font-size:13px;
     font-weight:800;
-    letter-spacing:2px;
+    letter-spacing:1.8px;
     text-transform:uppercase;
+    border-radius:2px;
   }
-  .lt-kicker.hidden{ display:none; }
+  .hb-category.hidden{ display:none; }
 
-  .lt-main{
-    padding:10px 22px 14px;
-  }
-
-  .lt-name{
+  .hb-clock{
     font-family:var(--disp);
-    font-size:34px;
-    font-weight:900;
-    line-height:1.05;
-    letter-spacing:.3px;
-    text-transform:uppercase;
-    white-space:nowrap;
-    overflow:hidden;
-    text-overflow:ellipsis;
-  }
-
-  .lt-role{
-    margin-top:3px;
-    font-family:var(--sans);
-    font-size:14px;
-    font-weight:600;
+    font-size:15px;
+    font-weight:700;
+    letter-spacing:1px;
     color:#c7ccd6;
-    white-space:nowrap;
+    font-variant-numeric:tabular-nums;
+  }
+  .hb-clock.hidden{ display:none; }
+
+  .hb-headline{
+    font-family:var(--disp);
+    font-size:33px;
+    font-weight:900;
+    line-height:1.12;
+    letter-spacing:.2px;
+    color:#fff;
+    display:-webkit-box;
+    -webkit-line-clamp:2;
+    -webkit-box-orient:vertical;
     overflow:hidden;
-    text-overflow:ellipsis;
   }
 
   /* ================= BOTÓN + PANEL DE ADMIN ================= */
   #adminToggle{
     position:fixed; right:18px; bottom:18px; z-index:999;
     width:46px; height:46px;
-    display:none;
-    place-items:center;
+    display:none; place-items:center;
     border:1px solid rgba(255,255,255,.18);
     border-radius:14px;
     background:rgba(17,20,27,.9);
@@ -155,7 +145,7 @@
 
   #adminPanel{
     position:fixed; top:0; right:0; z-index:1000;
-    width:420px; max-width:94vw; height:100vh;
+    width:430px; max-width:94vw; height:100vh;
     overflow-y:auto;
     background:#0c0f15;
     border-left:1px solid var(--line);
@@ -172,16 +162,8 @@
     background:rgba(12,15,21,.95);
     border-bottom:1px solid var(--line);
   }
-  .admin-kicker{
-    color:#ff6b7d; font-size:11px; font-weight:700;
-    letter-spacing:1.5px; text-transform:uppercase;
-  }
-  .admin-header h2{
-    margin:3px 40px 3px 0;
-    font-family:var(--disp);
-    font-size:24px; font-weight:900;
-    letter-spacing:.4px; text-transform:uppercase;
-  }
+  .admin-kicker{ color:#ff6b7d; font-size:11px; font-weight:700; letter-spacing:1.5px; text-transform:uppercase; }
+  .admin-header h2{ margin:3px 40px 3px 0; font-family:var(--disp); font-size:24px; font-weight:900; letter-spacing:.4px; text-transform:uppercase; }
   .admin-subtitle{ color:var(--muted); font-size:12px; }
   #closePanel{
     position:absolute; top:16px; right:16px;
@@ -205,27 +187,34 @@
   .admin-content{ padding:18px; }
 
   .field{ margin-bottom:14px; }
-  .field label{
-    display:block; margin-bottom:6px;
-    color:#a4adbd; font-size:11px; font-weight:600;
-    letter-spacing:.03em;
-  }
-  .field input[type=text]{
-    width:100%; height:40px; padding:8px 12px;
+  .field label{ display:block; margin-bottom:6px; color:#a4adbd; font-size:11px; font-weight:600; }
+  .field input[type=text], .field textarea{
+    width:100%; padding:9px 12px;
     border:1px solid #2b3240; border-radius:9px;
     background:#090c11; color:#fff; font-size:14px;
-    outline:none;
+    outline:none; font-family:var(--sans);
   }
-  .field input[type=text]:focus{
+  .field input[type=text]{ height:40px; }
+  .field textarea{ resize:vertical; min-height:64px; line-height:1.4; }
+  .field input:focus, .field textarea:focus{
     border-color:var(--accent);
     box-shadow:0 0 0 3px rgba(200,16,46,.15);
   }
+  .field-hint{ margin-top:5px; color:#69707f; font-size:10.5px; }
+
+  .logo-preview-row{ display:flex; align-items:center; gap:10px; }
+  .logo-preview{
+    width:44px; height:44px; flex:none;
+    border:1px solid #2b3240; border-radius:9px;
+    background:#090c11;
+    display:flex; align-items:center; justify-content:center;
+    overflow:hidden;
+  }
+  .logo-preview img{ max-width:100%; max-height:100%; object-fit:contain; }
+  .logo-preview.empty::after{ content:'—'; color:#454e5c; font-size:13px; }
 
   .accent-row{ display:flex; gap:8px; }
-  .accent-swatch{
-    width:30px; height:30px; border-radius:50%;
-    border:2px solid transparent; cursor:pointer; flex:none;
-  }
+  .accent-swatch{ width:30px; height:30px; border-radius:50%; border:2px solid transparent; cursor:pointer; flex:none; }
   .accent-swatch.selected{ border-color:#fff; }
 
   .switch-row{
@@ -250,8 +239,7 @@
   .section-title{
     display:flex; align-items:center; gap:10px;
     margin:22px 0 10px;
-    color:#8b93a3; font-size:11px; font-weight:700;
-    letter-spacing:.12em; text-transform:uppercase;
+    color:#8b93a3; font-size:11px; font-weight:700; letter-spacing:.12em; text-transform:uppercase;
   }
   .section-title::after{ content:''; flex:1; height:1px; background:var(--line); }
 
@@ -262,8 +250,8 @@
     background:#121620;
   }
   .preset-info{ flex:1; min-width:0; }
-  .preset-name{ font-size:13px; font-weight:700; color:#fff; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
-  .preset-role{ font-size:11px; color:var(--muted); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .preset-cat{ font-size:10px; font-weight:700; letter-spacing:.6px; text-transform:uppercase; color:var(--accent); }
+  .preset-headline{ font-size:12.5px; font-weight:600; color:#fff; overflow:hidden; text-overflow:ellipsis; display:-webkit-box; -webkit-line-clamp:1; -webkit-box-orient:vertical; }
   .preset-actions{ display:flex; gap:6px; flex:none; }
   .icon-btn{
     width:30px; height:30px; border-radius:8px;
@@ -282,8 +270,7 @@
   .save-preset-btn:hover{ border-color:var(--accent); color:#fff; }
 
   .empty-presets{
-    padding:16px; text-align:center;
-    color:var(--muted); font-size:12px;
+    padding:16px; text-align:center; color:var(--muted); font-size:12px;
     border:1px dashed var(--line); border-radius:10px;
   }
 
@@ -301,21 +288,13 @@
     background:#11151d; text-align:center;
     box-shadow:0 18px 50px rgba(0,0,0,.45);
   }
-  #lockTitle{
-    margin-bottom:16px; color:#fff;
-    font-family:var(--disp); font-size:21px; font-weight:900;
-    text-transform:uppercase;
-  }
+  #lockTitle{ margin-bottom:16px; color:#fff; font-family:var(--disp); font-size:21px; font-weight:900; text-transform:uppercase; }
   #lockInput{
     width:100%; height:42px; padding:9px 12px;
     border:1px solid #303848; border-radius:10px;
     background:#090c11; color:#fff; text-align:center; outline:none;
   }
-  #lockSubmit{
-    width:100%; height:41px; margin-top:10px;
-    border:0; border-radius:10px;
-    background:var(--accent); color:#fff; font-weight:700; cursor:pointer;
-  }
+  #lockSubmit{ width:100%; height:41px; margin-top:10px; border:0; border-radius:10px; background:var(--accent); color:#fff; font-weight:700; cursor:pointer; }
   #lockError{ display:none; margin-top:10px; color:#ff7787; font-size:11px; }
   #lockError.show{ display:block; }
 
@@ -327,14 +306,16 @@
 <body>
 
 <div id="stage">
-  <div id="lowerThird">
-    <div class="lt-flag"></div>
-    <div class="lt-body">
-      <div class="lt-kicker" id="ltKicker">EN VIVO</div>
-      <div class="lt-main">
-        <div class="lt-name" id="ltName">Nombre del invitado</div>
-        <div class="lt-role" id="ltRole">Cargo o descripción</div>
+  <div id="headlineBar">
+    <div class="hb-logo-cell" id="logoCell">
+      <img class="hb-logo" id="hbLogo" src="" alt="Logo del canal">
+    </div>
+    <div class="hb-main">
+      <div class="hb-top-row">
+        <span class="hb-category" id="hbCategory">ÚLTIMO MOMENTO</span>
+        <span class="hb-clock" id="hbClock">00:00</span>
       </div>
+      <div class="hb-headline" id="hbHeadline">Escribí el titular desde el panel de admin</div>
     </div>
   </div>
 </div>
@@ -349,29 +330,35 @@
   </div>
 </div>
 
-<button id="adminToggle" title="Editar título">⚙</button>
+<button id="adminToggle" title="Editar titular">⚙</button>
 
 <div id="adminPanel">
   <div class="admin-header">
     <button id="closePanel" aria-label="Cerrar">✕</button>
     <div class="admin-kicker">Astra Prods · Noticiero</div>
-    <h2>Control de título</h2>
-    <div class="admin-subtitle">Editá y mostrá el título en vivo desde acá.</div>
+    <h2>Barra de titulares</h2>
+    <div class="admin-subtitle">Editá y publicá el titular en vivo desde acá.</div>
     <div id="connStatus"><span id="connDot"></span><span id="connText">Conectando…</span></div>
   </div>
 
   <div class="admin-content">
     <div class="field">
-      <label for="in_kicker">Etiqueta pequeña (arriba)</label>
-      <input type="text" id="in_kicker" placeholder="EN VIVO, ENTREVISTA, ÚLTIMO MOMENTO…">
+      <label for="in_logo">Logo (URL de imagen, fondo transparente PNG recomendado)</label>
+      <div class="logo-preview-row">
+        <div class="logo-preview empty" id="logoPreview"></div>
+        <input type="text" id="in_logo" placeholder="https://…/logo.png" style="flex:1;">
+      </div>
+      <div class="field-hint">Dejalo vacío si no querés mostrar logo.</div>
     </div>
+
     <div class="field">
-      <label for="in_name">Nombre / título principal</label>
-      <input type="text" id="in_name" placeholder="Ej. Juan Pérez">
+      <label for="in_category">Categoría / etiqueta</label>
+      <input type="text" id="in_category" placeholder="ÚLTIMO MOMENTO, DEPORTES, POLÍTICA…">
     </div>
+
     <div class="field">
-      <label for="in_role">Cargo / descripción</label>
-      <input type="text" id="in_role" placeholder="Ej. Director técnico">
+      <label for="in_headline">Titular</label>
+      <textarea id="in_headline" placeholder="Escribí el titular de la noticia…"></textarea>
     </div>
 
     <div class="field">
@@ -379,9 +366,14 @@
       <div class="accent-row" id="accentRow"></div>
     </div>
 
-    <label class="switch-row" for="in_showKicker">
-      <span>Mostrar etiqueta pequeña</span>
-      <input type="checkbox" id="in_showKicker" checked>
+    <label class="switch-row" for="in_showCategory">
+      <span>Mostrar etiqueta de categoría</span>
+      <input type="checkbox" id="in_showCategory" checked>
+    </label>
+
+    <label class="switch-row" for="in_showClock">
+      <span>Mostrar reloj</span>
+      <input type="checkbox" id="in_showClock" checked>
     </label>
 
     <div class="main-actions">
@@ -389,13 +381,13 @@
       <button type="button" class="btn btn-hide" id="btnHide">Ocultar</button>
     </div>
 
-    <div class="section-title">Guardados rápidos</div>
+    <div class="section-title">Titulares guardados</div>
     <div id="presetList"></div>
-    <button type="button" class="save-preset-btn" id="btnSavePreset">+ Guardar título actual como acceso rápido</button>
+    <button type="button" class="save-preset-btn" id="btnSavePreset">+ Guardar titular actual como acceso rápido</button>
 
     <div class="hint">
       Esta pestaña de admin (con <code>?admin=1</code>) es solo para controlar. En OBS agregá el link
-      sin <code>?admin=1</code> como fuente de navegador — ahí solo se ve el título, transparente.
+      sin <code>?admin=1</code> como fuente de navegador — ahí solo se ve la barra, transparente.
     </div>
   </div>
 </div>
@@ -415,7 +407,7 @@
   const ADMIN_PASSWORD = "astraprods";
 
   // Identificador de esta gráfica. Si tenés varias transmisiones en simultáneo,
-  // usá  ?escena=nombre  en el link para no mezclar los títulos entre ellas.
+  // usá  ?escena=nombre  en el link para no mezclar los titulares entre ellas.
   const params = new URLSearchParams(window.location.search);
   const sceneId = params.get('escena') || 'default';
   const wantsAdmin = params.get('admin') === '1';
@@ -424,15 +416,16 @@
 
   firebase.initializeApp(FIREBASE_CONFIG);
   const db = firebase.database();
-  const sceneRef = db.ref('noticiero/' + sceneId);
-  const presetsRef = db.ref('noticiero_presets/' + sceneId);
+  const sceneRef = db.ref('titulares/' + sceneId);
+  const presetsRef = db.ref('titulares_presets/' + sceneId);
 
   const defaults = {
     visible: false,
-    kicker: "EN VIVO",
-    showKicker: true,
-    name: "Nombre del invitado",
-    role: "Cargo o descripción",
+    logo: "",
+    category: "ÚLTIMO MOMENTO",
+    showCategory: true,
+    showClock: true,
+    headline: "Escribí el titular desde el panel de admin",
     accent: ACCENTS[0]
   };
 
@@ -440,19 +433,36 @@
   let presets = {};
 
   /* ---------------- Vista pública (lo que va en OBS) ---------------- */
-  const lt = document.getElementById('lowerThird');
-  const ltKicker = document.getElementById('ltKicker');
-  const ltName = document.getElementById('ltName');
-  const ltRole = document.getElementById('ltRole');
+  const bar = document.getElementById('headlineBar');
+  const logoCell = document.getElementById('logoCell');
+  const hbLogo = document.getElementById('hbLogo');
+  const hbCategory = document.getElementById('hbCategory');
+  const hbClock = document.getElementById('hbClock');
+  const hbHeadline = document.getElementById('hbHeadline');
 
   function renderPublic(){
-    lt.style.setProperty('--accent', state.accent || ACCENTS[0]);
-    ltKicker.textContent = state.kicker || '';
-    ltKicker.classList.toggle('hidden', !state.showKicker);
-    ltName.textContent = state.name || '';
-    ltRole.textContent = state.role || '';
-    lt.classList.toggle('visible', !!state.visible);
+    bar.style.setProperty('--accent', state.accent || ACCENTS[0]);
+
+    const hasLogo = !!(state.logo && state.logo.trim());
+    logoCell.classList.toggle('empty', !hasLogo);
+    if (hasLogo) hbLogo.src = state.logo.trim();
+
+    hbCategory.textContent = state.category || '';
+    hbCategory.classList.toggle('hidden', !state.showCategory);
+    hbClock.classList.toggle('hidden', !state.showClock);
+    hbHeadline.textContent = state.headline || '';
+
+    bar.classList.toggle('visible', !!state.visible);
   }
+
+  function tickClock(){
+    const now = new Date();
+    const hh = String(now.getHours()).padStart(2, '0');
+    const mm = String(now.getMinutes()).padStart(2, '0');
+    hbClock.textContent = hh + ':' + mm;
+  }
+  tickClock();
+  setInterval(tickClock, 1000);
 
   sceneRef.on('value', snap => {
     const data = snap.val();
@@ -524,38 +534,56 @@
     const sw = document.createElement('div');
     sw.className = 'accent-swatch';
     sw.style.background = color;
-    sw.addEventListener('click', () => {
-      sceneRef.update({ accent: color });
-    });
+    sw.addEventListener('click', () => sceneRef.update({ accent: color }));
     sw.dataset.color = color;
     accentRow.appendChild(sw);
   });
 
-  function fillAdminInputs(){
-    const kickerInput = document.getElementById('in_kicker');
-    const nameInput = document.getElementById('in_name');
-    const roleInput = document.getElementById('in_role');
-    const showKickerInput = document.getElementById('in_showKicker');
+  const logoInput = document.getElementById('in_logo');
+  const logoPreview = document.getElementById('logoPreview');
 
-    if (document.activeElement !== kickerInput) kickerInput.value = state.kicker || '';
-    if (document.activeElement !== nameInput) nameInput.value = state.name || '';
-    if (document.activeElement !== roleInput) roleInput.value = state.role || '';
-    showKickerInput.checked = !!state.showKicker;
+  function updateLogoPreview(url){
+    logoPreview.innerHTML = '';
+    if (url && url.trim()) {
+      logoPreview.classList.remove('empty');
+      const img = document.createElement('img');
+      img.src = url.trim();
+      logoPreview.appendChild(img);
+    } else {
+      logoPreview.classList.add('empty');
+    }
+  }
+
+  function fillAdminInputs(){
+    const categoryInput = document.getElementById('in_category');
+    const headlineInput = document.getElementById('in_headline');
+    const showCategoryInput = document.getElementById('in_showCategory');
+    const showClockInput = document.getElementById('in_showClock');
+
+    if (document.activeElement !== logoInput) { logoInput.value = state.logo || ''; updateLogoPreview(state.logo); }
+    if (document.activeElement !== categoryInput) categoryInput.value = state.category || '';
+    if (document.activeElement !== headlineInput) headlineInput.value = state.headline || '';
+    showCategoryInput.checked = !!state.showCategory;
+    showClockInput.checked = !!state.showClock;
 
     [...accentRow.children].forEach(sw => {
       sw.classList.toggle('selected', sw.dataset.color === (state.accent || ACCENTS[0]));
     });
   }
 
-  document.getElementById('in_kicker').addEventListener('input', e => sceneRef.update({ kicker: e.target.value }));
-  document.getElementById('in_name').addEventListener('input', e => sceneRef.update({ name: e.target.value }));
-  document.getElementById('in_role').addEventListener('input', e => sceneRef.update({ role: e.target.value }));
-  document.getElementById('in_showKicker').addEventListener('change', e => sceneRef.update({ showKicker: e.target.checked }));
+  logoInput.addEventListener('input', e => {
+    updateLogoPreview(e.target.value);
+    sceneRef.update({ logo: e.target.value });
+  });
+  document.getElementById('in_category').addEventListener('input', e => sceneRef.update({ category: e.target.value }));
+  document.getElementById('in_headline').addEventListener('input', e => sceneRef.update({ headline: e.target.value }));
+  document.getElementById('in_showCategory').addEventListener('change', e => sceneRef.update({ showCategory: e.target.checked }));
+  document.getElementById('in_showClock').addEventListener('change', e => sceneRef.update({ showClock: e.target.checked }));
 
   document.getElementById('btnShow').addEventListener('click', () => sceneRef.update({ visible: true }));
   document.getElementById('btnHide').addEventListener('click', () => sceneRef.update({ visible: false }));
 
-  /* ---------------- Guardados rápidos (presets) ---------------- */
+  /* ---------------- Titulares guardados (presets) ---------------- */
   const presetList = document.getElementById('presetList');
 
   function renderPresets(){
@@ -563,7 +591,7 @@
     const entries = Object.entries(presets);
 
     if (!entries.length) {
-      presetList.innerHTML = '<div class="empty-presets">Sin accesos rápidos todavía.</div>';
+      presetList.innerHTML = '<div class="empty-presets">Sin titulares guardados todavía.</div>';
       return;
     }
 
@@ -572,8 +600,8 @@
       row.className = 'preset-row';
       row.innerHTML = `
         <div class="preset-info">
-          <div class="preset-name">${escapeHtml(p.name || 'Sin nombre')}</div>
-          <div class="preset-role">${escapeHtml(p.role || '')}</div>
+          <div class="preset-cat">${escapeHtml(p.category || '')}</div>
+          <div class="preset-headline">${escapeHtml(p.headline || 'Sin titular')}</div>
         </div>
         <div class="preset-actions">
           <button type="button" class="icon-btn load-btn" title="Usar y mostrar">▶</button>
@@ -582,11 +610,10 @@
       `;
       row.querySelector('.load-btn').addEventListener('click', () => {
         sceneRef.update({
-          kicker: p.kicker || defaults.kicker,
-          name: p.name || '',
-          role: p.role || '',
+          category: p.category || defaults.category,
+          headline: p.headline || '',
           accent: p.accent || ACCENTS[0],
-          showKicker: p.showKicker !== undefined ? p.showKicker : true,
+          showCategory: p.showCategory !== undefined ? p.showCategory : true,
           visible: true
         });
       });
@@ -609,14 +636,13 @@
   });
 
   document.getElementById('btnSavePreset').addEventListener('click', () => {
-    const name = document.getElementById('in_name').value.trim();
-    if (!name) { alert('Escribí un nombre antes de guardar.'); return; }
+    const headline = document.getElementById('in_headline').value.trim();
+    if (!headline) { alert('Escribí un titular antes de guardar.'); return; }
     const id = presetsRef.push().key;
     presetsRef.child(id).set({
-      name,
-      role: document.getElementById('in_role').value.trim(),
-      kicker: document.getElementById('in_kicker').value.trim(),
-      showKicker: document.getElementById('in_showKicker').checked,
+      headline,
+      category: document.getElementById('in_category').value.trim(),
+      showCategory: document.getElementById('in_showCategory').checked,
       accent: state.accent || ACCENTS[0]
     });
   });
