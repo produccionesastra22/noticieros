@@ -12,7 +12,9 @@
   1. Agregá este archivo como "Fuente de navegador" (Browser Source) en OBS,
      o subilo a un hosting (GitHub Pages, etc.) y pegá el link ahí.
   2. Dejá el fondo TRANSPARENTE (ya viene así).
-  3. Tamaño recomendado: 1920 x 1080.
+  3. Tamaño recomendado: 1920 x 1080. La barra ocupa todo el ancho inferior.
+  3b. Los colores de acento, fondo y texto se editan desde el panel de admin
+      y quedan guardados en Firebase por escena.
   4. Para controlarlo desde otra pestaña o el celular, abrí el mismo link
      agregando  ?admin=1  al final. Ejemplo:
        tu-link.html?admin=1
@@ -48,8 +50,9 @@
 
   #headlineBar{
     --accent:#c8102e;
+    --bg:#090b0f;
+    --text-color:#ffffff;
     width:100%;
-    max-width:1920px;
     display:flex;
     align-items:stretch;
     opacity:0;
@@ -61,7 +64,7 @@
   .hb-logo-cell{
     flex:0 0 128px;
     display:flex; align-items:center; justify-content:center;
-    background:#0a0c10;
+    background:color-mix(in srgb, var(--bg) 92%, black);
     border-top:3px solid var(--accent);
   }
   .hb-logo{
@@ -76,7 +79,7 @@
     display:flex;
     flex-direction:column;
     justify-content:center;
-    background:linear-gradient(90deg, rgba(9,11,15,.96), rgba(9,11,15,.9));
+    background:linear-gradient(90deg, color-mix(in srgb, var(--bg) 96%, transparent), color-mix(in srgb, var(--bg) 88%, transparent));
     backdrop-filter:blur(6px);
     padding:12px 26px;
     border-top:3px solid var(--accent);
@@ -109,7 +112,7 @@
     font-size:15px;
     font-weight:700;
     letter-spacing:1px;
-    color:#c7ccd6;
+    color:color-mix(in srgb, var(--text-color) 78%, transparent);
     font-variant-numeric:tabular-nums;
   }
   .hb-clock.hidden{ display:none; }
@@ -120,7 +123,7 @@
     font-weight:900;
     line-height:1.12;
     letter-spacing:.2px;
-    color:#fff;
+    color:var(--text-color);
     display:-webkit-box;
     -webkit-line-clamp:2;
     -webkit-box-orient:vertical;
@@ -213,9 +216,27 @@
   .logo-preview img{ max-width:100%; max-height:100%; object-fit:contain; }
   .logo-preview.empty::after{ content:'—'; color:#454e5c; font-size:13px; }
 
-  .accent-row{ display:flex; gap:8px; }
-  .accent-swatch{ width:30px; height:30px; border-radius:50%; border:2px solid transparent; cursor:pointer; flex:none; }
+  .accent-row{ display:flex; gap:8px; align-items:center; }
+  .accent-swatch{ width:28px; height:28px; border-radius:50%; border:2px solid transparent; cursor:pointer; flex:none; }
   .accent-swatch.selected{ border-color:#fff; }
+
+  .color-field-row{ display:flex; align-items:center; gap:10px; }
+  .color-field-row label{ margin:0; flex:1; }
+  .color-field-row input[type=color]{
+    width:44px; height:34px; padding:2px;
+    border:1px solid #2b3240; border-radius:8px;
+    background:#090c11; cursor:pointer; flex:none;
+  }
+  .color-field-row input[type=text]{
+    width:96px; height:34px; padding:6px 9px;
+    font-size:12px; text-transform:uppercase;
+    font-family:var(--disp); letter-spacing:.5px;
+  }
+  .color-group{
+    border:1px solid #2b3240; border-radius:11px;
+    background:#090c11; padding:12px; margin-bottom:14px;
+  }
+  .color-group .color-field-row + .color-field-row{ margin-top:10px; }
 
   .switch-row{
     display:flex; align-items:center; justify-content:space-between;
@@ -248,6 +269,10 @@
     padding:10px 12px; margin-bottom:8px;
     border:1px solid var(--line); border-radius:10px;
     background:#121620;
+  }
+  .preset-dot{
+    width:10px; height:10px; border-radius:50%;
+    flex:none; box-shadow:0 0 0 2px rgba(255,255,255,.08);
   }
   .preset-info{ flex:1; min-width:0; }
   .preset-cat{ font-size:10px; font-weight:700; letter-spacing:.6px; text-transform:uppercase; color:var(--accent); }
@@ -361,8 +386,26 @@
       <textarea id="in_headline" placeholder="Escribí el titular de la noticia…"></textarea>
     </div>
 
+    <div class="section-title">Colores</div>
+    <div class="color-group">
+      <div class="color-field-row">
+        <label for="in_accentColor">Acento (etiqueta y línea superior)</label>
+        <input type="color" id="in_accentColor">
+        <input type="text" id="in_accentColorHex" maxlength="7">
+      </div>
+      <div class="color-field-row">
+        <label for="in_bgColor">Fondo de la barra</label>
+        <input type="color" id="in_bgColor">
+        <input type="text" id="in_bgColorHex" maxlength="7">
+      </div>
+      <div class="color-field-row">
+        <label for="in_textColor">Color del texto</label>
+        <input type="color" id="in_textColor">
+        <input type="text" id="in_textColorHex" maxlength="7">
+      </div>
+    </div>
     <div class="field">
-      <label>Color de acento</label>
+      <label>Accesos rápidos de acento</label>
       <div class="accent-row" id="accentRow"></div>
     </div>
 
@@ -426,7 +469,9 @@
     showCategory: true,
     showClock: true,
     headline: "Escribí el titular desde el panel de admin",
-    accent: ACCENTS[0]
+    accent: ACCENTS[0],
+    bgColor: "#090b0f",
+    textColor: "#ffffff"
   };
 
   let state = { ...defaults };
@@ -442,6 +487,8 @@
 
   function renderPublic(){
     bar.style.setProperty('--accent', state.accent || ACCENTS[0]);
+    bar.style.setProperty('--bg', state.bgColor || defaults.bgColor);
+    bar.style.setProperty('--text-color', state.textColor || defaults.textColor);
 
     const hasLogo = !!(state.logo && state.logo.trim());
     logoCell.classList.toggle('empty', !hasLogo);
@@ -528,7 +575,7 @@
   toggleBtn.addEventListener('click', () => panel.classList.toggle('open'));
   closeBtn.addEventListener('click', () => panel.classList.remove('open'));
 
-  /* swatches de color */
+  /* accesos rápidos de acento */
   const accentRow = document.getElementById('accentRow');
   ACCENTS.forEach(color => {
     const sw = document.createElement('div');
@@ -538,6 +585,32 @@
     sw.dataset.color = color;
     accentRow.appendChild(sw);
   });
+
+  /* colores editables: acento / fondo / texto, cada uno con selector nativo + campo hex */
+  function isValidHex(v){ return /^#([0-9a-f]{6})$/i.test(v); }
+
+  function wireColorField(pickerId, hexId, stateKey){
+    const picker = document.getElementById(pickerId);
+    const hexField = document.getElementById(hexId);
+
+    picker.addEventListener('input', () => {
+      hexField.value = picker.value;
+      sceneRef.update({ [stateKey]: picker.value });
+    });
+
+    hexField.addEventListener('input', () => {
+      let v = hexField.value.trim();
+      if (v && v[0] !== '#') v = '#' + v;
+      if (isValidHex(v)) {
+        picker.value = v;
+        sceneRef.update({ [stateKey]: v });
+      }
+    });
+  }
+
+  wireColorField('in_accentColor', 'in_accentColorHex', 'accent');
+  wireColorField('in_bgColor', 'in_bgColorHex', 'bgColor');
+  wireColorField('in_textColor', 'in_textColorHex', 'textColor');
 
   const logoInput = document.getElementById('in_logo');
   const logoPreview = document.getElementById('logoPreview');
@@ -569,6 +642,19 @@
     [...accentRow.children].forEach(sw => {
       sw.classList.toggle('selected', sw.dataset.color === (state.accent || ACCENTS[0]));
     });
+
+    syncColorField('in_accentColor', 'in_accentColorHex', state.accent || ACCENTS[0]);
+    syncColorField('in_bgColor', 'in_bgColorHex', state.bgColor || defaults.bgColor);
+    syncColorField('in_textColor', 'in_textColorHex', state.textColor || defaults.textColor);
+  }
+
+  function syncColorField(pickerId, hexId, value){
+    const picker = document.getElementById(pickerId);
+    const hexField = document.getElementById(hexId);
+    if (document.activeElement !== picker && document.activeElement !== hexField) {
+      picker.value = value;
+      hexField.value = value.toUpperCase();
+    }
   }
 
   logoInput.addEventListener('input', e => {
@@ -599,6 +685,7 @@
       const row = document.createElement('div');
       row.className = 'preset-row';
       row.innerHTML = `
+        <div class="preset-dot" style="background:${escapeHtml(p.accent || ACCENTS[0])};"></div>
         <div class="preset-info">
           <div class="preset-cat">${escapeHtml(p.category || '')}</div>
           <div class="preset-headline">${escapeHtml(p.headline || 'Sin titular')}</div>
@@ -613,6 +700,8 @@
           category: p.category || defaults.category,
           headline: p.headline || '',
           accent: p.accent || ACCENTS[0],
+          bgColor: p.bgColor || defaults.bgColor,
+          textColor: p.textColor || defaults.textColor,
           showCategory: p.showCategory !== undefined ? p.showCategory : true,
           visible: true
         });
@@ -643,7 +732,9 @@
       headline,
       category: document.getElementById('in_category').value.trim(),
       showCategory: document.getElementById('in_showCategory').checked,
-      accent: state.accent || ACCENTS[0]
+      accent: state.accent || ACCENTS[0],
+      bgColor: state.bgColor || defaults.bgColor,
+      textColor: state.textColor || defaults.textColor
     });
   });
 })();
