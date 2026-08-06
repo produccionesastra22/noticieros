@@ -1,0 +1,627 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Título Noticiero</title>
+
+<!--
+  ==========================================================================
+  CÓMO USAR EN OBS
+  ==========================================================================
+  1. Agrega este archivo como "Fuente de navegador" (Browser Source) en OBS,
+     o súbelo a un hosting (GitHub Pages, etc.) y pega el link ahí.
+  2. Deja el fondo TRANSPARENTE marcado en OBS (ya viene transparente).
+  3. Tamaño recomendado: 1920 x 1080.
+  4. Para controlar el título desde otra pestaña/celular, abre el mismo link
+     agregando  ?admin=1  al final. Ejemplo:
+       tu-link.html?admin=1
+     Esa pestaña de admin NO hace falta agregarla en OBS, solo la fuente
+     normal (sin ?admin=1) va en OBS.
+  ==========================================================================
+-->
+
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
+
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700;800;900&family=Inter:wght@400;500;600;700&display=swap');
+
+  :root{
+    --panel:#12151b;
+    --panel-2:#181c24;
+    --line:rgba(255,255,255,.1);
+    --text:#f4f6fa;
+    --muted:#8b93a3;
+    --accent:#c8102e;
+    --sans:'Inter',sans-serif;
+    --disp:'Barlow Condensed',sans-serif;
+  }
+  *{box-sizing:border-box;}
+  html,body{
+    margin:0; padding:0; width:100%; height:100%;
+    background:transparent;
+  }
+  body{
+    font-family:var(--sans);
+    color:var(--text);
+    overflow:hidden;
+  }
+
+  /* ================= LOWER THIRD (lo que se ve en OBS) ================= */
+  #stage{
+    position:fixed;
+    left:0; right:0; bottom:0;
+    height:100vh;
+    display:flex;
+    align-items:flex-end;
+    justify-content:flex-start;
+    pointer-events:none;
+  }
+
+  #lowerThird{
+    --accent: #c8102e;
+    position:relative;
+    margin:0 0 68px 64px;
+    display:flex;
+    align-items:stretch;
+    opacity:0;
+    transform:translateX(-38px);
+    transition:opacity .38s ease, transform .38s cubic-bezier(.2,.8,.2,1);
+  }
+  #lowerThird.visible{
+    opacity:1;
+    transform:translateX(0);
+  }
+
+  .lt-flag{
+    width:6px;
+    background:var(--accent);
+    flex:0 0 6px;
+    border-radius:2px 0 0 2px;
+  }
+
+  .lt-body{
+    display:flex;
+    flex-direction:column;
+    background:linear-gradient(90deg, rgba(10,12,16,.94), rgba(10,12,16,.82));
+    backdrop-filter:blur(6px);
+    padding:0;
+    box-shadow:0 12px 34px rgba(0,0,0,.4);
+    min-width:340px;
+    max-width:640px;
+  }
+
+  .lt-kicker{
+    display:inline-flex;
+    align-items:center;
+    gap:8px;
+    width:fit-content;
+    padding:5px 14px;
+    margin:0;
+    background:var(--accent);
+    color:#fff;
+    font-family:var(--disp);
+    font-size:12.5px;
+    font-weight:800;
+    letter-spacing:2px;
+    text-transform:uppercase;
+  }
+  .lt-kicker.hidden{ display:none; }
+
+  .lt-main{
+    padding:10px 22px 14px;
+  }
+
+  .lt-name{
+    font-family:var(--disp);
+    font-size:34px;
+    font-weight:900;
+    line-height:1.05;
+    letter-spacing:.3px;
+    text-transform:uppercase;
+    white-space:nowrap;
+    overflow:hidden;
+    text-overflow:ellipsis;
+  }
+
+  .lt-role{
+    margin-top:3px;
+    font-family:var(--sans);
+    font-size:14px;
+    font-weight:600;
+    color:#c7ccd6;
+    white-space:nowrap;
+    overflow:hidden;
+    text-overflow:ellipsis;
+  }
+
+  /* ================= BOTÓN + PANEL DE ADMIN ================= */
+  #adminToggle{
+    position:fixed; right:18px; bottom:18px; z-index:999;
+    width:46px; height:46px;
+    display:none;
+    place-items:center;
+    border:1px solid rgba(255,255,255,.18);
+    border-radius:14px;
+    background:rgba(17,20,27,.9);
+    color:#fff;
+    box-shadow:0 10px 26px rgba(0,0,0,.35);
+    cursor:pointer;
+    opacity:.55;
+    transition:.2s ease;
+  }
+  #adminToggle:hover{ opacity:1; transform:translateY(-2px); }
+
+  #adminPanel{
+    position:fixed; top:0; right:0; z-index:1000;
+    width:420px; max-width:94vw; height:100vh;
+    overflow-y:auto;
+    background:#0c0f15;
+    border-left:1px solid var(--line);
+    box-shadow:-18px 0 46px rgba(0,0,0,.45);
+    transform:translateX(102%);
+    transition:transform .3s cubic-bezier(.2,.8,.2,1);
+    display:none;
+  }
+  #adminPanel.open{ transform:translateX(0); }
+
+  .admin-header{
+    position:sticky; top:0; z-index:2;
+    padding:20px 22px 16px;
+    background:rgba(12,15,21,.95);
+    border-bottom:1px solid var(--line);
+  }
+  .admin-kicker{
+    color:#ff6b7d; font-size:11px; font-weight:700;
+    letter-spacing:1.5px; text-transform:uppercase;
+  }
+  .admin-header h2{
+    margin:3px 40px 3px 0;
+    font-family:var(--disp);
+    font-size:24px; font-weight:900;
+    letter-spacing:.4px; text-transform:uppercase;
+  }
+  .admin-subtitle{ color:var(--muted); font-size:12px; }
+  #closePanel{
+    position:absolute; top:16px; right:16px;
+    width:32px; height:32px;
+    border:1px solid var(--line); border-radius:9px;
+    background:#181c25; color:#aab2c2; cursor:pointer;
+  }
+  #closePanel:hover{ color:#fff; background:#222735; }
+
+  #connStatus{
+    display:inline-flex; align-items:center; gap:7px;
+    margin-top:12px; padding:6px 9px;
+    border:1px solid var(--line); border-radius:999px;
+    background:rgba(255,255,255,.03);
+    color:#aeb5c4; font-size:11px;
+  }
+  #connDot{ width:7px; height:7px; border-radius:999px; background:#697184; }
+  #connDot.online{ background:#33ff9c; box-shadow:0 0 0 3px rgba(51,255,156,.12); }
+  #connDot.offline{ background:#ff4d62; }
+
+  .admin-content{ padding:18px; }
+
+  .field{ margin-bottom:14px; }
+  .field label{
+    display:block; margin-bottom:6px;
+    color:#a4adbd; font-size:11px; font-weight:600;
+    letter-spacing:.03em;
+  }
+  .field input[type=text]{
+    width:100%; height:40px; padding:8px 12px;
+    border:1px solid #2b3240; border-radius:9px;
+    background:#090c11; color:#fff; font-size:14px;
+    outline:none;
+  }
+  .field input[type=text]:focus{
+    border-color:var(--accent);
+    box-shadow:0 0 0 3px rgba(200,16,46,.15);
+  }
+
+  .accent-row{ display:flex; gap:8px; }
+  .accent-swatch{
+    width:30px; height:30px; border-radius:50%;
+    border:2px solid transparent; cursor:pointer; flex:none;
+  }
+  .accent-swatch.selected{ border-color:#fff; }
+
+  .switch-row{
+    display:flex; align-items:center; justify-content:space-between;
+    padding:11px 12px; margin-bottom:14px;
+    border:1px solid #2b3240; border-radius:11px;
+    background:#090c11; color:#e8ebf1; font-size:12.5px;
+  }
+  #adminPanel input[type=checkbox]{ width:18px; height:18px; accent-color:var(--accent); }
+
+  .main-actions{ display:flex; gap:8px; margin-bottom:20px; }
+  .btn{
+    flex:1; height:44px;
+    border:1px solid transparent; border-radius:10px;
+    font-size:13px; font-weight:700; cursor:pointer;
+    transition:transform .15s, filter .15s;
+  }
+  .btn:hover{ filter:brightness(1.1); transform:translateY(-1px); }
+  .btn-show{ background:#1c664b; color:#a7f5d2; border-color:rgba(51,255,156,.3); }
+  .btn-hide{ background:#252b38; color:#dce1eb; border-color:#343c4d; }
+
+  .section-title{
+    display:flex; align-items:center; gap:10px;
+    margin:22px 0 10px;
+    color:#8b93a3; font-size:11px; font-weight:700;
+    letter-spacing:.12em; text-transform:uppercase;
+  }
+  .section-title::after{ content:''; flex:1; height:1px; background:var(--line); }
+
+  .preset-row{
+    display:flex; align-items:center; gap:8px;
+    padding:10px 12px; margin-bottom:8px;
+    border:1px solid var(--line); border-radius:10px;
+    background:#121620;
+  }
+  .preset-info{ flex:1; min-width:0; }
+  .preset-name{ font-size:13px; font-weight:700; color:#fff; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .preset-role{ font-size:11px; color:var(--muted); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .preset-actions{ display:flex; gap:6px; flex:none; }
+  .icon-btn{
+    width:30px; height:30px; border-radius:8px;
+    border:1px solid #2b3240; background:#090c11; color:#aab2c2;
+    cursor:pointer; font-size:13px; display:flex; align-items:center; justify-content:center;
+  }
+  .icon-btn:hover{ color:#fff; border-color:#454e59; }
+  .icon-btn.danger:hover{ color:#ff6b7d; border-color:#ff6b7d; }
+
+  .save-preset-btn{
+    width:100%; height:38px; margin-top:4px;
+    border:1px dashed #343c4d; border-radius:9px;
+    background:transparent; color:#a4adbd;
+    font-size:12px; font-weight:600; cursor:pointer;
+  }
+  .save-preset-btn:hover{ border-color:var(--accent); color:#fff; }
+
+  .empty-presets{
+    padding:16px; text-align:center;
+    color:var(--muted); font-size:12px;
+    border:1px dashed var(--line); border-radius:10px;
+  }
+
+  .hint{ margin-top:16px; color:#778095; font-size:10.5px; line-height:1.55; }
+
+  /* ================= PANTALLA DE CLAVE ================= */
+  #lockScreen{
+    position:fixed; inset:0; z-index:2000;
+    display:none; align-items:center; justify-content:center;
+    background:rgba(4,6,9,.82); backdrop-filter:blur(10px);
+  }
+  #lockBox{
+    width:290px; max-width:90vw; padding:26px;
+    border:1px solid var(--line); border-radius:16px;
+    background:#11151d; text-align:center;
+    box-shadow:0 18px 50px rgba(0,0,0,.45);
+  }
+  #lockTitle{
+    margin-bottom:16px; color:#fff;
+    font-family:var(--disp); font-size:21px; font-weight:900;
+    text-transform:uppercase;
+  }
+  #lockInput{
+    width:100%; height:42px; padding:9px 12px;
+    border:1px solid #303848; border-radius:10px;
+    background:#090c11; color:#fff; text-align:center; outline:none;
+  }
+  #lockSubmit{
+    width:100%; height:41px; margin-top:10px;
+    border:0; border-radius:10px;
+    background:var(--accent); color:#fff; font-weight:700; cursor:pointer;
+  }
+  #lockError{ display:none; margin-top:10px; color:#ff7787; font-size:11px; }
+  #lockError.show{ display:block; }
+
+  @media (prefers-reduced-motion: reduce){
+    *{ transition-duration:.01ms !important; animation-duration:.01ms !important; }
+  }
+</style>
+</head>
+<body>
+
+<div id="stage">
+  <div id="lowerThird">
+    <div class="lt-flag"></div>
+    <div class="lt-body">
+      <div class="lt-kicker" id="ltKicker">EN VIVO</div>
+      <div class="lt-main">
+        <div class="lt-name" id="ltName">Nombre del invitado</div>
+        <div class="lt-role" id="ltRole">Cargo o descripción</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Clave para entrar en modo admin -->
+<div id="lockScreen">
+  <div id="lockBox">
+    <div id="lockTitle">🔒 Modo admin</div>
+    <input type="password" id="lockInput" placeholder="Clave de acceso" autocomplete="off">
+    <button type="button" id="lockSubmit">Entrar</button>
+    <div id="lockError">Clave incorrecta, intenta de nuevo.</div>
+  </div>
+</div>
+
+<button id="adminToggle" title="Editar título">⚙</button>
+
+<div id="adminPanel">
+  <div class="admin-header">
+    <button id="closePanel" aria-label="Cerrar">✕</button>
+    <div class="admin-kicker">Astra Prods · Noticiero</div>
+    <h2>Control de título</h2>
+    <div class="admin-subtitle">Editá y mostrá el título en vivo desde acá.</div>
+    <div id="connStatus"><span id="connDot"></span><span id="connText">Conectando…</span></div>
+  </div>
+
+  <div class="admin-content">
+    <div class="field">
+      <label for="in_kicker">Etiqueta pequeña (arriba)</label>
+      <input type="text" id="in_kicker" placeholder="EN VIVO, ENTREVISTA, ÚLTIMO MOMENTO…">
+    </div>
+    <div class="field">
+      <label for="in_name">Nombre / título principal</label>
+      <input type="text" id="in_name" placeholder="Ej. Juan Pérez">
+    </div>
+    <div class="field">
+      <label for="in_role">Cargo / descripción</label>
+      <input type="text" id="in_role" placeholder="Ej. Director técnico">
+    </div>
+
+    <div class="field">
+      <label>Color de acento</label>
+      <div class="accent-row" id="accentRow"></div>
+    </div>
+
+    <label class="switch-row" for="in_showKicker">
+      <span>Mostrar etiqueta pequeña</span>
+      <input type="checkbox" id="in_showKicker" checked>
+    </label>
+
+    <div class="main-actions">
+      <button type="button" class="btn btn-show" id="btnShow">● Mostrar en pantalla</button>
+      <button type="button" class="btn btn-hide" id="btnHide">Ocultar</button>
+    </div>
+
+    <div class="section-title">Guardados rápidos</div>
+    <div id="presetList"></div>
+    <button type="button" class="save-preset-btn" id="btnSavePreset">+ Guardar título actual como acceso rápido</button>
+
+    <div class="hint">
+      Esta pestaña de admin (con <code>?admin=1</code>) es solo para controlar. En OBS agregá el link
+      sin <code>?admin=1</code> como fuente de navegador — ahí solo se ve el título, transparente.
+    </div>
+  </div>
+</div>
+
+<script>
+(function(){
+  // ======================================================================
+  // CONFIGURACIÓN
+  // ======================================================================
+  const FIREBASE_CONFIG = {
+    apiKey: "AIzaSyA71rh4uzcNOueb48-FegayRueExfmI9tw",
+    databaseURL: "https://astraprods-default-rtdb.firebaseio.com",
+    projectId: "astraprods"
+  };
+
+  // Clave para entrar al panel de admin (?admin=1). Cambiala cuando quieras.
+  const ADMIN_PASSWORD = "astraprods";
+
+  // Identificador de esta gráfica. Si tenés varias transmisiones en simultáneo,
+  // usá  ?escena=nombre  en el link para no mezclar los títulos entre ellas.
+  const params = new URLSearchParams(window.location.search);
+  const sceneId = params.get('escena') || 'default';
+  const wantsAdmin = params.get('admin') === '1';
+
+  const ACCENTS = ["#c8102e", "#1656c9", "#0f9d58", "#e6a400", "#7b3fe4", "#0d0d0d"];
+
+  firebase.initializeApp(FIREBASE_CONFIG);
+  const db = firebase.database();
+  const sceneRef = db.ref('noticiero/' + sceneId);
+  const presetsRef = db.ref('noticiero_presets/' + sceneId);
+
+  const defaults = {
+    visible: false,
+    kicker: "EN VIVO",
+    showKicker: true,
+    name: "Nombre del invitado",
+    role: "Cargo o descripción",
+    accent: ACCENTS[0]
+  };
+
+  let state = { ...defaults };
+  let presets = {};
+
+  /* ---------------- Vista pública (lo que va en OBS) ---------------- */
+  const lt = document.getElementById('lowerThird');
+  const ltKicker = document.getElementById('ltKicker');
+  const ltName = document.getElementById('ltName');
+  const ltRole = document.getElementById('ltRole');
+
+  function renderPublic(){
+    lt.style.setProperty('--accent', state.accent || ACCENTS[0]);
+    ltKicker.textContent = state.kicker || '';
+    ltKicker.classList.toggle('hidden', !state.showKicker);
+    ltName.textContent = state.name || '';
+    ltRole.textContent = state.role || '';
+    lt.classList.toggle('visible', !!state.visible);
+  }
+
+  sceneRef.on('value', snap => {
+    const data = snap.val();
+    if (data) {
+      state = { ...defaults, ...data };
+    } else if (wantsAdmin) {
+      sceneRef.set(defaults);
+      state = { ...defaults };
+    }
+    renderPublic();
+    fillAdminInputs();
+  });
+
+  db.ref('.info/connected').on('value', snap => {
+    const dot = document.getElementById('connDot');
+    const text = document.getElementById('connText');
+    if (!dot) return;
+    if (snap.val() === true) {
+      dot.className = 'online';
+      text.textContent = 'Conectado — cambios en vivo';
+    } else {
+      dot.className = 'offline';
+      text.textContent = 'Sin conexión…';
+    }
+  });
+
+  /* ---------------- Panel de admin ---------------- */
+  const panel = document.getElementById('adminPanel');
+  const toggleBtn = document.getElementById('adminToggle');
+  const closeBtn = document.getElementById('closePanel');
+  const lockScreen = document.getElementById('lockScreen');
+  const lockInput = document.getElementById('lockInput');
+  const lockSubmit = document.getElementById('lockSubmit');
+  const lockError = document.getElementById('lockError');
+
+  function activateAdmin(){
+    panel.style.display = 'block';
+    toggleBtn.style.display = 'grid';
+    panel.classList.add('open');
+    sceneRef.once('value').then(snap => {
+      if (!snap.val()) sceneRef.set(defaults);
+    });
+  }
+
+  function tryUnlock(){
+    if (lockInput.value === ADMIN_PASSWORD) {
+      lockScreen.style.display = 'none';
+      activateAdmin();
+    } else {
+      lockError.classList.add('show');
+      lockInput.value = '';
+      lockInput.focus();
+    }
+  }
+
+  if (wantsAdmin) {
+    lockScreen.style.display = 'flex';
+    setTimeout(() => lockInput.focus(), 60);
+    lockSubmit.addEventListener('click', tryUnlock);
+    lockInput.addEventListener('keydown', e => { if (e.key === 'Enter') tryUnlock(); });
+  }
+
+  toggleBtn.addEventListener('click', () => panel.classList.toggle('open'));
+  closeBtn.addEventListener('click', () => panel.classList.remove('open'));
+
+  /* swatches de color */
+  const accentRow = document.getElementById('accentRow');
+  ACCENTS.forEach(color => {
+    const sw = document.createElement('div');
+    sw.className = 'accent-swatch';
+    sw.style.background = color;
+    sw.addEventListener('click', () => {
+      sceneRef.update({ accent: color });
+    });
+    sw.dataset.color = color;
+    accentRow.appendChild(sw);
+  });
+
+  function fillAdminInputs(){
+    const kickerInput = document.getElementById('in_kicker');
+    const nameInput = document.getElementById('in_name');
+    const roleInput = document.getElementById('in_role');
+    const showKickerInput = document.getElementById('in_showKicker');
+
+    if (document.activeElement !== kickerInput) kickerInput.value = state.kicker || '';
+    if (document.activeElement !== nameInput) nameInput.value = state.name || '';
+    if (document.activeElement !== roleInput) roleInput.value = state.role || '';
+    showKickerInput.checked = !!state.showKicker;
+
+    [...accentRow.children].forEach(sw => {
+      sw.classList.toggle('selected', sw.dataset.color === (state.accent || ACCENTS[0]));
+    });
+  }
+
+  document.getElementById('in_kicker').addEventListener('input', e => sceneRef.update({ kicker: e.target.value }));
+  document.getElementById('in_name').addEventListener('input', e => sceneRef.update({ name: e.target.value }));
+  document.getElementById('in_role').addEventListener('input', e => sceneRef.update({ role: e.target.value }));
+  document.getElementById('in_showKicker').addEventListener('change', e => sceneRef.update({ showKicker: e.target.checked }));
+
+  document.getElementById('btnShow').addEventListener('click', () => sceneRef.update({ visible: true }));
+  document.getElementById('btnHide').addEventListener('click', () => sceneRef.update({ visible: false }));
+
+  /* ---------------- Guardados rápidos (presets) ---------------- */
+  const presetList = document.getElementById('presetList');
+
+  function renderPresets(){
+    presetList.innerHTML = '';
+    const entries = Object.entries(presets);
+
+    if (!entries.length) {
+      presetList.innerHTML = '<div class="empty-presets">Sin accesos rápidos todavía.</div>';
+      return;
+    }
+
+    entries.forEach(([id, p]) => {
+      const row = document.createElement('div');
+      row.className = 'preset-row';
+      row.innerHTML = `
+        <div class="preset-info">
+          <div class="preset-name">${escapeHtml(p.name || 'Sin nombre')}</div>
+          <div class="preset-role">${escapeHtml(p.role || '')}</div>
+        </div>
+        <div class="preset-actions">
+          <button type="button" class="icon-btn load-btn" title="Usar y mostrar">▶</button>
+          <button type="button" class="icon-btn danger del-btn" title="Eliminar">✕</button>
+        </div>
+      `;
+      row.querySelector('.load-btn').addEventListener('click', () => {
+        sceneRef.update({
+          kicker: p.kicker || defaults.kicker,
+          name: p.name || '',
+          role: p.role || '',
+          accent: p.accent || ACCENTS[0],
+          showKicker: p.showKicker !== undefined ? p.showKicker : true,
+          visible: true
+        });
+      });
+      row.querySelector('.del-btn').addEventListener('click', () => {
+        presetsRef.child(id).remove();
+      });
+      presetList.appendChild(row);
+    });
+  }
+
+  function escapeHtml(str){
+    const d = document.createElement('div');
+    d.textContent = str;
+    return d.innerHTML;
+  }
+
+  presetsRef.on('value', snap => {
+    presets = snap.val() || {};
+    renderPresets();
+  });
+
+  document.getElementById('btnSavePreset').addEventListener('click', () => {
+    const name = document.getElementById('in_name').value.trim();
+    if (!name) { alert('Escribí un nombre antes de guardar.'); return; }
+    const id = presetsRef.push().key;
+    presetsRef.child(id).set({
+      name,
+      role: document.getElementById('in_role').value.trim(),
+      kicker: document.getElementById('in_kicker').value.trim(),
+      showKicker: document.getElementById('in_showKicker').checked,
+      accent: state.accent || ACCENTS[0]
+    });
+  });
+})();
+</script>
+
+</body>
+</html>
